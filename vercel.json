@@ -1,0 +1,24 @@
+{
+    "framework": "nextjs",
+    "buildCommand": "next build",
+    "outputDirectory": ".next",
+    "installCommand": "npm install",
+    "functions": {
+      "app/api/copilot/route.ts": {
+        "maxDuration": 60
+      },
+      "app/api/import/route.ts": {
+        "maxDuration": 60,
+        "memory": 1024
+      }
+    },
+    "headers": [
+      {
+        "source": "/api/copilot",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" },
+          { "key": "X-Accel-Buffering", "value": "no" }
+        ]
+      }
+    ]
+  }

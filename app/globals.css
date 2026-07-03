@@ -1,0 +1,285 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 222 47% 5%;
+    --foreground: 210 20% 96%;
+    --card: 222 40% 7%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 40% 8%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 30% 11%;
+    --secondary-foreground: 210 20% 80%;
+    --muted: 222 30% 11%;
+    --muted-foreground: 215 16% 50%;
+    --accent: 222 30% 13%;
+    --accent-foreground: 210 20% 90%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 30% 14%;
+    --input: 222 30% 10%;
+    --ring: 217 91% 60%;
+    --radius: 0.75rem;
+    --positive: 142 71% 45%;
+    --warning: 38 92% 50%;
+  }
+
+  .light-mode {
+    --background: 210 20% 98%;
+    --foreground: 222 47% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 8%;
+    --primary: 217 91% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 15% 93%;
+    --secondary-foreground: 222 47% 20%;
+    --muted: 210 15% 93%;
+    --muted-foreground: 215 16% 40%;
+    --accent: 210 15% 90%;
+    --accent-foreground: 222 47% 10%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 85%;
+    --input: 0 0% 97%;
+    --ring: 217 91% 50%;
+    --positive: 142 60% 35%;
+    --warning: 38 85% 42%;
+  }
+}
+
+@layer base {
+  * { box-sizing: border-box; border-color: hsl(var(--border)); }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+}
+
+@layer utilities {
+  .page-title { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.025em; color: hsl(var(--foreground)); }
+  .metric-label { font-size: 0.625rem; color: hsl(var(--muted-foreground)); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+  .text-positive { color: hsl(var(--positive)); }
+  .text-warning  { color: hsl(var(--warning));  }
+  .glass-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid hsl(var(--border));
+    transition: border-color 0.2s;
+  }
+  .light-mode .glass-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .glow-blue { box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+}
+
+/* ── DROPDOWN / SELECT — DARK ─────────────────────────── */
+[data-radix-popper-content-wrapper] { z-index: 99999 !important; }
+
+[data-radix-select-content] {
+  background-color: #0f1523 !important;
+  border: 1px solid #1e2d40 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04) !important;
+  z-index: 99999 !important;
+  overflow: hidden !important;
+  min-width: 180px !important;
+}
+[data-radix-select-viewport] {
+  background-color: #0f1523 !important;
+  padding: 6px !important;
+}
+[data-radix-select-item] {
+  background-color: transparent !important;
+  color: #c9d5e0 !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 0.8125rem !important;
+  outline: none !important;
+  transition: background 0.1s !important;
+}
+[data-radix-select-item][data-highlighted] {
+  background-color: rgba(59,130,246,0.18) !important;
+  color: #93c5fd !important;
+}
+[data-radix-select-item][data-state="checked"] {
+  background-color: rgba(59,130,246,0.22) !important;
+  color: #60a5fa !important;
+  font-weight: 500 !important;
+}
+[data-radix-select-item-text] { color: inherit !important; }
+[data-radix-select-scroll-up-button],
+[data-radix-select-scroll-down-button] {
+  background-color: #0f1523 !important;
+  color: #6b8097 !important;
+}
+
+/* ── DROPDOWN — LIGHT MODE ────────────────────────────── */
+.light-mode [data-radix-select-content] {
+  background-color: #ffffff !important;
+  border: 1px solid #d1dde8 !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+}
+.light-mode [data-radix-select-viewport] { background-color: #ffffff !important; }
+.light-mode [data-radix-select-item] { color: #1e2d40 !important; }
+.light-mode [data-radix-select-item][data-highlighted] {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+.light-mode [data-radix-select-scroll-up-button],
+.light-mode [data-radix-select-scroll-down-button] {
+  background-color: #ffffff !important;
+  color: #6b7280 !important;
+}
+
+/* ── SELECT TRIGGER BUTTON ────────────────────────────── */
+button[role="combobox"] {
+  background-color: #0f1a27 !important;
+  border: 1px solid #1e2d40 !important;
+  color: #c9d5e0 !important;
+  border-radius: 8px !important;
+  padding: 0 12px !important;
+  font-size: 0.875rem !important;
+  height: 36px !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+button[role="combobox"]:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2) !important;
+  outline: none !important;
+}
+.light-mode button[role="combobox"] {
+  background-color: #f8fafc !important;
+  border-color: #d1dde8 !important;
+  color: #1e2d40 !important;
+}
+
+/* ── DIALOG ───────────────────────────────────────────── */
+[data-radix-dialog-overlay] {
+  background-color: rgba(0,0,0,0.75) !important;
+  backdrop-filter: blur(6px) !important;
+}
+[data-radix-dialog-content] {
+  background-color: #0b1320 !important;
+  border: 1px solid #1e2d40 !important;
+  color: #c9d5e0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.9) !important;
+}
+.light-mode [data-radix-dialog-content] {
+  background-color: #ffffff !important;
+  border-color: #d1dde8 !important;
+  color: #1e2d40 !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+}
+[data-radix-dialog-title] { color: #e8f0f8 !important; font-weight: 600 !important; }
+.light-mode [data-radix-dialog-title] { color: #1e2d40 !important; }
+[data-radix-dialog-description] { color: #6b8097 !important; font-size: 0.8125rem !important; }
+
+/* ── INPUTS ───────────────────────────────────────────── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="date"]),
+input[type="date"],
+textarea {
+  background-color: #0f1a27 !important;
+  border: 1px solid #1e2d40 !important;
+  color: #c9d5e0 !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 0.875rem !important;
+  width: 100% !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+input::placeholder, textarea::placeholder { color: #4a6178 !important; }
+input:focus, textarea:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+  outline: none !important;
+}
+.light-mode input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.light-mode input[type="date"],
+.light-mode textarea {
+  background-color: #f8fafc !important;
+  border-color: #d1dde8 !important;
+  color: #1e2d40 !important;
+}
+.light-mode input::placeholder,
+.light-mode textarea::placeholder { color: #9caab8 !important; }
+
+/* ── LABELS ───────────────────────────────────────────── */
+label { color: #8aa0b5 !important; font-size: 0.75rem !important; font-weight: 500 !important; }
+.light-mode label { color: #4a6178 !important; }
+
+/* ── FORM FIELD ERROR ─────────────────────────────────── */
+.form-error { color: #f87171 !important; font-size: 0.6875rem !important; }
+
+/* ── TABS ─────────────────────────────────────────────── */
+[role="tablist"] {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid #1e2d40 !important;
+  border-radius: 10px !important;
+  padding: 3px !important;
+}
+.light-mode [role="tablist"] {
+  background: #f0f4f8 !important;
+  border-color: #d1dde8 !important;
+}
+[role="tab"] { color: #6b8097 !important; font-size: 0.8125rem !important; border-radius: 8px !important; }
+[role="tab"][data-state="active"] {
+  background-color: #1d4ed8 !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+.light-mode [role="tab"][data-state="active"] {
+  background-color: #2563eb !important;
+  color: #fff !important;
+}
+
+/* ── BADGE ────────────────────────────────────────────── */
+.badge, [data-slot="badge"] {
+  font-size: 0.6875rem !important;
+  font-weight: 500 !important;
+}
+
+/* ── SWITCH ───────────────────────────────────────────── */
+button[role="switch"] {
+  background-color: #1e2d40 !important;
+  border: none !important;
+  transition: background-color 0.2s !important;
+}
+button[role="switch"][data-state="checked"] { background-color: #2563eb !important; }
+.light-mode button[role="switch"] { background-color: #cbd5e1 !important; }
+.light-mode button[role="switch"][data-state="checked"] { background-color: #2563eb !important; }
+
+/* ── PROGRESS BAR ─────────────────────────────────────── */
+[role="progressbar"] { background: rgba(255,255,255,0.06) !important; border-radius: 99px !important; }
+[role="progressbar"] > div { background: #3b82f6 !important; border-radius: 99px !important; }
+.light-mode [role="progressbar"] { background: #e2e8f0 !important; }
+
+/* ── CARD ─────────────────────────────────────────────── */
+.bg-card { background-color: hsl(var(--card)) !important; }
+.bg-muted { background-color: hsl(var(--muted)) !important; }
+
+/* ── LIGHT MODE TEXT FIXES ────────────────────────────── */
+.light-mode h1, .light-mode h2, .light-mode h3 { color: #1e2d40 !important; }
+.light-mode .text-white { color: #1e2d40 !important; }
+.light-mode .text-muted-foreground { color: #5a7080 !important; }
+.light-mode aside { background-color: #f8fafc !important; border-color: #d1dde8 !important; }
+.light-mode header { background-color: rgba(248,250,252,0.9) !important; border-color: #d1dde8 !important; }
