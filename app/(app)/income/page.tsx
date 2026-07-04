@@ -1,9 +1,8 @@
-import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { IncomeModule } from '@/components/income/IncomeModule'
+import { IncomeModule }  from '@/components/income/IncomeModule'
 
+export const dynamic  = 'force-dynamic'
 export const revalidate = 0
-export const metadata: Metadata = { title: 'Income' }
 
 export default async function IncomePage() {
   const supabase = await createClient()
@@ -21,5 +20,11 @@ export default async function IncomePage() {
     supabase.from('accounts').select('id, name, account_type').eq('user_id', user.id),
   ])
 
-  return <IncomeModule entries={entries ?? []} accounts={accounts ?? []} financialYear={currentFY} />
+  return (
+    <IncomeModule
+      entries={entries ?? []}
+      accounts={accounts ?? []}
+      financialYear={currentFY}
+    />
+  )
 }

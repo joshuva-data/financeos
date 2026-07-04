@@ -1,6 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { PremiumDashboard } from '@/components/dashboard/PremiumDashboard'
+import { createClient }      from '@/lib/supabase/server'
+import { redirect }          from 'next/navigation'
+import { PremiumDashboard }  from '@/components/dashboard/PremiumDashboard'
+
+export const dynamic  = 'force-dynamic'
+export const revalidate = 0
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -43,7 +46,8 @@ export default async function DashboardPage() {
     supabase.from('profiles').select('full_name').eq('id', user.id).single(),
     supabase.from('tithe_entries').select('amount, giving_date').eq('user_id', user.id)
       .gte('giving_date', startOfMonth),
-    supabase.from('net_worth_snapshots').select('*').eq('user_id', user.id).order('snapshot_date').limit(24),
+    supabase.from('net_worth_snapshots').select('*').eq('user_id', user.id)
+      .order('snapshot_date').limit(24),
   ])
 
   return (
@@ -58,10 +62,10 @@ export default async function DashboardPage() {
       receivables={receivables ?? []}
       investments={investments ?? []}
       tithe={tithe ?? []}
-      userName={profile?.full_name ?? user.email ?? 'there'}
+      snapshots={snapshots ?? []}
+      userName={profile?.data?.full_name ?? user.email ?? 'there'}
       currentFY={currentFY}
       userId={user.id}
-      snapshots={snapshots ?? []}
     />
   )
 }
