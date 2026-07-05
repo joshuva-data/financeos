@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useState } from 'react'
 import { Plus, AlertTriangle, Calendar, Percent, TrendingDown, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +18,6 @@ interface DebtAccount { id:string; debt_type:string; lender_name:string; origina
 
 export function DebtModule({ debts: initial }: { debts: DebtAccount[] }) {
   const [debts, setDebts]       = useState(initial)
-  useEffect(() => { setDebts(initial) }, [initial])
   const [showAdd, setShowAdd]   = useState(false)
   const [deleting, setDeleting] = useState<string|null>(null)
 

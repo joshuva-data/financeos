@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useState } from 'react'
 import { Plus, Target, CheckCircle, TrendingUp, Trash2, PlusCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,7 +23,6 @@ const P_COLORS = ['','bg-red-500','bg-orange-500','bg-amber-500','bg-blue-500','
 
 export function GoalsModule({ goals: initial }: { goals: Goal[] }) {
   const [goals, setGoals]               = useState(initial)
-  useEffect(() => { setGoals(initial) }, [initial])
   const [tab, setTab]                   = useState('active')
   const [showAdd, setShowAdd]           = useState(false)
   const [deleting, setDeleting]         = useState<string|null>(null)

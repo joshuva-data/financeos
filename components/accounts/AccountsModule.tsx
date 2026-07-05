@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useState } from 'react'
 import { Plus, Wallet, CreditCard, TrendingUp, Building2, Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -30,8 +29,8 @@ const TYPE_ICONS: Record<string, string> = {
 
 export function AccountsModule({ accounts: initial, recentTxns }: { accounts: Account[]; recentTxns: Transaction[] }) {
   const [accounts, setAccounts] = useState(initial)
-  const [tab, setTab]           = useState('all')
   useEffect(() => { setAccounts(initial) }, [initial])
+  const [tab, setTab]           = useState('all')
   const [showAdd, setShowAdd]   = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
 
