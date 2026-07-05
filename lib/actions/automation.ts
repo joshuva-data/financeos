@@ -112,30 +112,48 @@ export async function confirmAndRoute(
   if (selectedModules.includes('Accounts')) {
     const balance = fields.closing_balance ?? fields.net_salary
     if (!balance || balance <= 0) {
-      results.push({ module: 'Accounts', success: false, message: 'Skipped — no Closing Balance / Net Salary entered' })
+      results.push({ module: 'Accounts', success: false, message: 'Skipped — no Closing Balance or Net Salary entered' })
     } else {
-      const { data: existing } = await supabase.from('accounts')
-        .select('id').eq('user_id', user.id)
-        .eq('bank_name', fields.bank_name || fields.employer_name || '')
+      // Deduplicate by name, not bank_name (bank_name can be null)
+      const accountName = fields.bank_name
+        ? `${fields.bank_name} Account`
+        : fields.employer_name
+        ? `${fields.employer_name} Salary Account`
+        : 'Salary Account'
+
+      const { data: existing } = await supabase
+        .from('accounts')
+        .select('id, balance')
+        .eq('user_id', user.id)
+        .eq('name', accountName)
         .maybeSingle()
 
       if (existing) {
-        const { error } = await supabase.from('accounts').update({ balance }).eq('id', existing.id)
+        const { error } = await supabase
+          .from('accounts')
+          .update({ balance })
+          .eq('id', existing.id)
         if (error) results.push({ module: 'Accounts', success: false, message: `DB error: ${error.message}` })
-        else { results.push({ module: 'Accounts', success: true, message: `Updated balance to ₹${balance.toLocaleString('en-IN')}`, recordId: existing.id }); revalidatePath('/accounts') }
+        else {
+          results.push({ module: 'Accounts', success: true, message: `Updated "${accountName}" balance to ₹${balance.toLocaleString('en-IN')}`, recordId: existing.id })
+          revalidatePath('/accounts')
+        }
       } else {
         const { data, error } = await supabase.from('accounts').insert({
-          user_id: user.id,
-          name: fields.bank_name ? `${fields.bank_name} Account` : (fields.employer_name ? `${fields.employer_name} Salary Account` : 'New Account'),
+          user_id:      user.id,
+          name:         accountName,
           account_type: 'savings',
-          bank_name: fields.bank_name || null,
+          bank_name:    fields.bank_name   || null,
           account_number: fields.account_number || null,
           balance,
-          status: 'active',
-          is_primary: false,
+          status:       'active',
+          is_primary:   false,
         }).select('id').single()
         if (error) results.push({ module: 'Accounts', success: false, message: `DB error: ${error.message}` })
-        else { results.push({ module: 'Accounts', success: true, message: `Account created with ₹${balance.toLocaleString('en-IN')}`, recordId: data.id }); revalidatePath('/accounts') }
+        else {
+          results.push({ module: 'Accounts', success: true, message: `Account "${accountName}" created with ₹${balance.toLocaleString('en-IN')}`, recordId: data.id })
+          revalidatePath('/accounts')
+        }
       }
     }
   }

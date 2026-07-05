@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useState } from 'react'
 import { Plus, Heart, Receipt, Percent, Calendar, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ const CAT_LABELS: Record<string,string> = { tithe:'Tithe', offering:'Offering', 
 
 export function TitheModule({ entries: initial, financialYear }: { entries: TitheEntry[]; financialYear: string }) {
   const [entries, setEntries]   = useState(initial)
+  useEffect(() => { setEntries(initial) }, [initial])
   const [tab, setTab]           = useState('entries')
   const [showAdd, setShowAdd]   = useState(false)
   const [deleting, setDeleting] = useState<string|null>(null)

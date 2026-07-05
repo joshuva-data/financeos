@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useState } from 'react'
 import { Plus, TrendingUp, TrendingDown, BarChart3, Trash2, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,7 @@ interface Props { investments: Investment[] }
 
 export function InvestmentConsole({ investments: initial }: Props) {
   const [investments, setInvestments] = useState(initial)
+  useEffect(() => { setInvestments(initial) }, [initial])
   const [showAdd, setShowAdd]         = useState(false)
   const [deleting, setDeleting]       = useState<string | null>(null)
 

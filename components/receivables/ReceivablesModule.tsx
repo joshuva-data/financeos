@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useState } from 'react'
 import { Plus, Clock, AlertCircle, CheckCircle, RefreshCw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,7 @@ const STATUS_CFG: Record<string,{label:string;color:string}> = {
 
 export function ReceivablesModule({ receivables: initial }: { receivables: Receivable[] }) {
   const [receivables, setReceivables] = useState(initial)
+  useEffect(() => { setReceivables(initial) }, [initial])
   const [showAdd, setShowAdd]         = useState(false)
   const [markItem, setMarkItem]       = useState<Receivable|null>(null)
   const [markAmount, setMarkAmount]   = useState('')
