@@ -1,7 +1,7 @@
 import { createClient }    from '@/lib/supabase/server'
 import { DocumentsModule } from '@/components/documents/DocumentsModule'
 
-export const dynamic  = 'force-dynamic'
+export const dynamic    = 'force-dynamic'
 export const revalidate = 0
 
 export default async function DocumentsPage() {
@@ -10,8 +10,15 @@ export default async function DocumentsPage() {
   if (!user) return null
 
   const { data: documents } = await supabase
-    .from('documents').select('*').eq('user_id', user.id)
+    .from('documents')
+    .select('*')
+    .eq('user_id', user.id)
     .order('uploaded_at', { ascending: false })
 
-  return <DocumentsModule documents={documents ?? []} userId={user.id} />
+  return (
+    <DocumentsModule
+      documents={documents ?? []}
+      userId={user.id}
+    />
+  )
 }
