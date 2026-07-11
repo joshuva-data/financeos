@@ -1,5 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { AutomationHub } from '@/components/automation/AutomationHub'
+import { createClient }     from '@/lib/supabase/server'
+import { AutomationEngine } from '@/components/automation/AutomationEngine'
+
+export const dynamic    = 'force-dynamic'
+export const revalidate = 0
 
 export default async function AutomationPage() {
   const supabase = await createClient()
@@ -11,7 +14,12 @@ export default async function AutomationPage() {
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(50)
 
-  return <AutomationHub jobs={jobs ?? []} userId={user.id} />
+  return (
+    <AutomationEngine
+      jobs={jobs ?? []}
+      userId={user.id}
+    />
+  )
 }
