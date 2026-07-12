@@ -475,6 +475,105 @@ export interface AIInsight {
   created_at: string
 }
 
+// ─── AI Copilot layer ───────────────────────────────────────────────────────────
+// These tables back the Context Builder's "Calendar" module and the Copilot's
+// conversation memory / Action Center. `calendar_events` was previously queried
+// by lib/ai/context/tools/executor.ts and lib/notifications/engine.ts without
+// ever being declared here — that gap is fixed below.
+
+export type CalendarEventType = 'emi' | 'renewal' | 'tax_deadline' | 'goal_target' | 'bill' | 'custom'
+
+export interface CalendarEvent {
+  id: string
+  user_id: string
+  title: string
+  event_type: CalendarEventType
+  event_date: string
+  amount: number | null
+  linked_id: string | null
+  linked_type: string | null
+  is_completed: boolean
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+// A conversation is a single Copilot chat thread. Messages are stored so that
+// follow-up questions (in this thread, or a resumed one) can reuse prior
+// context without the user re-explaining themselves — Requirement 9.
+export interface CopilotConversation {
+  id: string
+  user_id: string
+  title: string
+  last_message_at: string
+  created_at: string
+}
+
+export type CopilotMessageRole = 'user' | 'assistant'
+
+export interface CopilotMessage {
+  id: string
+  conversation_id: string
+  user_id: string
+  role: CopilotMessageRole
+  content: string
+  tools_used: string[]
+  recommendation_ids: string[]
+  created_at: string
+}
+
+// Action Center: every action the AI proposes is persisted here in `proposed`
+// state. Nothing executes until the user explicitly confirms — Requirement 8.
+export type CopilotActionType =
+  | 'categorize_transactions'
+  | 'create_reminder'
+  | 'generate_report'
+  | 'suggest_automation'
+  | 'update_goal'
+  | 'flag_for_review'
+
+export type CopilotActionStatus = 'proposed' | 'confirmed' | 'rejected' | 'executed' | 'failed'
+
+export interface CopilotAction {
+  id: string
+  user_id: string
+  conversation_id: string | null
+  action_type: CopilotActionType
+  title: string
+  description: string
+  why: string
+  sources: string[]
+  confidence: 'High' | 'Medium' | 'Low'
+  payload: Record<string, Json>
+  status: CopilotActionStatus
+  result: Record<string, Json> | null
+  created_at: string
+  resolved_at: string | null
+}
+
+// Persisted form of workflows created via lib/automation/*, so the Context
+// Builder's "Automation" module can reason over what's already configured
+// instead of only the in-memory client state.
+export type AutomationStatus = 'active' | 'paused' | 'draft' | 'archived'
+
+export interface Automation {
+  id: string
+  user_id: string
+  name: string
+  description: string
+  category: string
+  status: AutomationStatus
+  trigger: Record<string, Json>
+  conditions: Record<string, Json>[]
+  actions: Record<string, Json>[]
+  run_count: number
+  success_count: number
+  last_run_at: string | null
+  created_via_copilot: boolean
+  created_at: string
+  updated_at: string
+}
+
 // ─── Insert Types (App → DB) ───────────────────────────────────────────────────
 
 export type AccountInsert = Omit<Account, 'id' | 'user_id' | 'created_at' | 'updated_at'>
@@ -486,6 +585,11 @@ export type ReceivableInsert = Omit<Receivable, 'id' | 'user_id' | 'balance_due'
 export type FinancialGoalInsert = Omit<FinancialGoal, 'id' | 'user_id' | 'created_at' | 'updated_at'>
 export type TitheEntryInsert = Omit<TitheEntry, 'id' | 'user_id' | 'created_at' | 'updated_at'>
 export type DocumentInsert = Omit<Document, 'id' | 'user_id' | 'uploaded_at' | 'created_at' | 'updated_at'>
+export type CalendarEventInsert = Omit<CalendarEvent, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+export type CopilotConversationInsert = Omit<CopilotConversation, 'id' | 'user_id' | 'last_message_at' | 'created_at'>
+export type CopilotMessageInsert = Omit<CopilotMessage, 'id' | 'user_id' | 'created_at'>
+export type CopilotActionInsert = Omit<CopilotAction, 'id' | 'user_id' | 'status' | 'result' | 'created_at' | 'resolved_at'>
+export type AutomationInsert = Omit<Automation, 'id' | 'user_id' | 'run_count' | 'success_count' | 'last_run_at' | 'created_at' | 'updated_at'>
 
 // ─── Update Types ──────────────────────────────────────────────────────────────
 
@@ -495,6 +599,9 @@ export type InsurancePolicyUpdate = Partial<InsurancePolicyInsert>
 export type InvestmentUpdate = Partial<InvestmentInsert>
 export type DebtAccountUpdate = Partial<DebtAccountInsert>
 export type FinancialGoalUpdate = Partial<FinancialGoalInsert>
+export type CalendarEventUpdate = Partial<CalendarEventInsert>
+export type CopilotActionUpdate = Partial<Pick<CopilotAction, 'status' | 'result' | 'resolved_at'>>
+export type AutomationUpdate = Partial<AutomationInsert>
 
 // ─── Supabase Database type (for createClient<Database>()) ────────────────────
 
@@ -520,6 +627,11 @@ export type Database = {
       net_worth_snapshots: { Row: NetWorthSnapshot; Insert: Omit<NetWorthSnapshot, 'id' | 'net_worth' | 'created_at'>; Update: never }
       documents: { Row: Document; Insert: DocumentInsert; Update: Partial<DocumentInsert> }
       ai_insights: { Row: AIInsight; Insert: Omit<AIInsight, 'id' | 'created_at'>; Update: Pick<AIInsight, 'is_read' | 'is_dismissed'> }
+      calendar_events: { Row: CalendarEvent; Insert: CalendarEventInsert; Update: CalendarEventUpdate }
+      copilot_conversations: { Row: CopilotConversation; Insert: CopilotConversationInsert; Update: Partial<CopilotConversationInsert> }
+      copilot_messages: { Row: CopilotMessage; Insert: CopilotMessageInsert; Update: never }
+      copilot_actions: { Row: CopilotAction; Insert: CopilotActionInsert; Update: CopilotActionUpdate }
+      automations: { Row: Automation; Insert: AutomationInsert; Update: AutomationUpdate }
     }
     Functions: {
       compute_net_worth: { Args: { p_user_id: string }; Returns: NetWorthSnapshot }
