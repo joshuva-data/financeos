@@ -38,7 +38,7 @@ export async function getOrCreateConversation(
 
   const { data, error } = await supabase
     .from('copilot_conversations')
-    .insert({ title: 'New conversation' })
+    .insert({ user_id: userId, title: 'New conversation' })
     .select('id')
     .single()
   if (error) throw new Error(`Failed to create conversation: ${error.message}`)
@@ -70,6 +70,7 @@ export async function appendTurn(
 ) {
   const { error } = await supabase.from('copilot_messages').insert({
     conversation_id: conversationId,
+    user_id: userId,
     role,
     content,
     tools_used: toolsUsed,

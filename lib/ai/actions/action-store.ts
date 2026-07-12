@@ -116,6 +116,7 @@ async function executeAction(
       const { data, error } = await supabase
         .from('calendar_events')
         .insert({
+          user_id: userId,
           title: payload.label,
           event_type: 'custom',
           event_date: payload.dueDate,
@@ -136,6 +137,7 @@ async function executeAction(
       const { data, error } = await supabase
         .from('automations')
         .insert({
+          user_id: userId,
           name: 'Subscription watch',
           description: 'Flags new recurring charges detected in transactions for review.',
           category: 'expenses',
@@ -174,6 +176,7 @@ async function executeAction(
       const { data, error } = await supabase
         .from('ai_insights')
         .insert({
+          user_id: userId,
           insight_type: 'alert',
           title: `Flagged for review: ${payload.itemLabel}`,
           body: action.why,
@@ -198,6 +201,7 @@ async function executeAction(
       const { data, error } = await supabase
         .from('ai_insights')
         .insert({
+          user_id: userId,
           insight_type: 'recommendation',
           title: 'Categorize uncategorized transactions',
           body: 'Requested via AI Copilot Action Center — open Expenses to review suggested categories.',
