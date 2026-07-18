@@ -9,16 +9,21 @@
 // Note: this file previously lived at lib/ai/context/tools/executor.ts and
 // imported a `getNetWorthBreakdown` helper from lib/calculations/networth
 // that was never defined there — a dead import that would have failed
-// TypeScript compilation. It's been removed; get_net_worth computes its
-// breakdown inline, as it always did.
+// TypeScript compilation. It's been removed; get_net_worth now computes its
+// breakdown via the Shared Financial Engine (lib/engine/financial-engine.ts,
+// Phase 2 foundation work) rather than inline, so it can never disagree with
+// the Dashboard's or the AI Copilot's own net worth figure.
 // ============================================================================
 
 import type { SupabaseServerClient } from '../types'
 import { calculateTax } from '@/lib/calculations/taxCalculator'
+import { FinancialEngine } from '@/lib/engine/financial-engine'
 import {
   comparePeriods, forecastCashFlow, detectRecurringSubscriptions, explainTrend,
 } from '../services/reasoning-engine.service'
 import { buildFinancialContext } from '../services/context-builder.service'
+import { simulateScenario } from '../services/scenario-simulator.service'
+import type { ScenarioType } from '../types'
 
 type Client = SupabaseServerClient
 
@@ -28,6 +33,7 @@ export type ToolName =
   | 'get_corporate_benefits' | 'get_investment_portfolio' | 'get_cash_flow' | 'get_rental_status'
   | 'get_documents' | 'get_calendar' | 'get_notifications' | 'get_automations'
   | 'compare_periods' | 'forecast_cash_flow' | 'detect_subscriptions' | 'explain_trend'
+  | 'simulate_scenario'
 
 export type ToolInput = Record<string, unknown>
 export type ToolResult = Record<string, unknown>
@@ -59,6 +65,7 @@ export async function executeTool(
     case 'forecast_cash_flow':       return executeForecastCashFlow(supabase, userId, input)
     case 'detect_subscriptions':     return executeDetectSubscriptions(supabase, userId, input)
     case 'explain_trend':            return executeExplainTrend(supabase, userId, input)
+    case 'simulate_scenario':        return executeSimulateScenario(supabase, userId, input)
     default:
       throw new Error(`Unknown tool: ${toolName satisfies never}`)
   }
@@ -75,22 +82,26 @@ async function executeGetNetWorth(supabase: Client, userId: string, input: ToolI
     supabase.from('rental_properties').select('property_name, current_value').eq('user_id', userId),
   ])
 
-  const LIQUID = ['savings', 'current', 'salary', 'wallet', 'cash']
-  const liquidCash = (accounts.data ?? []).filter(a => LIQUID.includes(a.account_type)).reduce((s, a) => s + a.balance, 0)
-  const investedValue = (investments.data ?? []).reduce((s, i) => s + (i.current_value ?? 0), 0)
-  const receivablesTotal = (receivables.data ?? []).reduce((s, r) => s + r.balance_due, 0)
   const realEstateValue = (properties.data ?? []).reduce((s, p) => s + (p.current_value ?? 0), 0)
-  const totalDebt = (debt.data ?? []).reduce((s, d) => s + d.outstanding, 0)
+  const debtRows = debt.data ?? []
 
-  const totalAssets = liquidCash + investedValue + receivablesTotal + realEstateValue
-  const netWorth = totalAssets - totalDebt
+  const { netWorth, totalAssets, totalLiabilities, breakdown } = FinancialEngine.calculateNetWorth({
+    accounts: accounts.data ?? [],
+    investments: investments.data ?? [],
+    receivables: receivables.data ?? [],
+    debts: debtRows,
+    realEstateValue,
+  })
 
   const result: ToolResult = {
     net_worth: netWorth,
     total_assets: totalAssets,
-    total_liabilities: totalDebt,
-    breakdown: { liquid_cash: liquidCash, investments: investedValue, receivables: receivablesTotal, real_estate: realEstateValue },
-    liabilities: { total_debt: totalDebt, accounts: (debt.data ?? []).map(d => ({ name: d.lender_name, type: d.debt_type, outstanding: d.outstanding })) },
+    total_liabilities: totalLiabilities,
+    breakdown: {
+      liquid_cash: breakdown.liquidCash, investments: breakdown.investments,
+      receivables: breakdown.receivables, real_estate: breakdown.realEstate,
+    },
+    liabilities: { total_debt: totalLiabilities, accounts: debtRows.map(d => ({ name: d.lender_name, type: d.debt_type, outstanding: d.outstanding })) },
   }
 
   if (input.include_history) {
@@ -474,6 +485,17 @@ async function executeDetectSubscriptions(supabase: Client, userId: string, inpu
 async function executeExplainTrend(supabase: Client, userId: string, input: ToolInput): Promise<ToolResult> {
   const ctx = await buildFinancialContext(supabase, userId)
   const result = await explainTrend(supabase, userId, ctx, input.metric as 'net_worth' | 'expenses' | 'savings_rate' | 'investments')
+  return { ...result }
+}
+
+async function executeSimulateScenario(supabase: Client, userId: string, input: ToolInput): Promise<ToolResult> {
+  const ctx = await buildFinancialContext(supabase, userId)
+  const result = simulateScenario(ctx, {
+    type: input.scenario_type as ScenarioType,
+    amount: (input.amount as number) ?? 0,
+    targetDebtLender: input.target_debt_lender as string | undefined,
+    projectionMonths: input.projection_months as number | undefined,
+  })
   return { ...result }
 }
 

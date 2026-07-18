@@ -225,4 +225,20 @@ export const FINANCEOS_TOOLS: FinanceOSTool[] = [
       required: ['metric'],
     },
   },
+
+  // ── v5: Scenario Simulator ("What If" analysis) ──────────────────────────
+  {
+    name: 'simulate_scenario',
+    description: 'Run a "what if" financial scenario — income change, expense change, an additional SIP/investment, or paying off a loan early. Use whenever the user asks a hypothetical question like "what if my salary increases" or "what if I invest more" or "what if I pay off my loan early". Always present the result as a projection with clearly stated assumptions, never as a certainty.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        scenario_type: { type: 'string', enum: ['increase_income', 'increase_expense', 'increase_sip', 'early_loan_payoff'] },
+        amount: { type: 'number', description: 'For increase_income/increase_expense: percentage change (e.g. 10 for +10%). For increase_sip: monthly rupee amount. Ignored for early_loan_payoff.' },
+        target_debt_lender: { type: 'string', description: 'For early_loan_payoff only: the lender name to target. Omit to target the highest-interest debt automatically.' },
+        projection_months: { type: 'number', description: 'How many months to project forward (default 12)' },
+      },
+      required: ['scenario_type'],
+    },
+  },
 ]

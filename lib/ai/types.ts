@@ -185,6 +185,56 @@ export interface ExecutiveBrief {
   generatedAt:   string
 }
 
+// ── Explainable AI (v5 Deliverable 11) ───────────────────────────────────────
+// The existing Recommendation type above already carries most of this
+// (why/sources/confidence/nextAction) — this is a stricter, more granular
+// shape for the newer reasoning surfaces (Scenario Simulator, and future
+// Spending/Investment/Risk Intelligence engines) that separates Evidence
+// from Reasoning and makes Assumptions explicit, since "what did the AI
+// assume" and "what did the AI observe" are different questions a user
+// might want answered separately. Existing Recommendation consumers are
+// unaffected — this is additive, not a replacement.
+
+export interface ExplainableInsight {
+  observation: string       // what was noticed, in plain terms
+  evidence: string[]        // the specific data points that support the observation
+  reasoning: string          // how the observation leads to the conclusion
+  assumptions: string[]      // anything projected/estimated rather than observed directly
+  suggestedActions: string[] // concrete next steps
+  confidence: 'High' | 'Medium' | 'Low'
+  isEstimate: boolean         // true for anything forward-looking (forecasts, scenarios)
+}
+
+// ── Scenario Simulator (v5 Deliverable 13) ───────────────────────────────────
+
+export type ScenarioType =
+  | 'increase_income' | 'increase_expense' | 'increase_sip' | 'early_loan_payoff'
+
+export interface ScenarioInput {
+  type: ScenarioType
+  // Interpretation depends on `type`:
+  //   increase_income / increase_expense: percentage change (e.g. 10 for +10%)
+  //   increase_sip: absolute monthly rupee amount
+  //   early_loan_payoff: the debt's `lender` name (matched against current debts) — omit to target the highest-interest debt
+  amount: number
+  targetDebtLender?: string
+  projectionMonths?: number // default 12
+}
+
+export interface ScenarioMetricComparison {
+  metric: string
+  before: number
+  after: number
+  changeAbs: number
+  changePct: number
+}
+
+export interface ScenarioResult extends ExplainableInsight {
+  scenarioLabel: string
+  comparisons: ScenarioMetricComparison[]
+  projectionMonths: number
+}
+
 // ── Financial Reasoning Engine output types ──────────────────────────────────
 // Requirement 6: trends, comparisons, forecasts, subscriptions.
 
