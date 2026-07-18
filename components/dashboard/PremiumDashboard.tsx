@@ -18,6 +18,8 @@
 
 import { useState, useMemo, memo } from 'react'
 import Link from 'next/link'
+import { FinancialEngine } from '@/lib/engine/financial-engine'
+import { buildHealthCategoryInput, calculateFinancialHealthScore } from '@/lib/engine/health-score-engine'
 import {
   TrendingUp, TrendingDown, Wallet, CreditCard, Shield,
   Target, AlertCircle, Calendar, ChevronRight, Plus,
@@ -268,25 +270,21 @@ export function PremiumDashboard({
 
   // ── Core financial metrics (all memoised) ─────────────────────────────────
 
-  const LIQUID = ['savings', 'current', 'salary', 'wallet', 'cash']
-
-  const liquidCash = useMemo(
-    () => accounts.filter(a => LIQUID.includes(a.account_type))
-                  .reduce((s, a) => s + a.balance, 0),
-    [accounts]
+  // Net worth, debt ratio, and emergency fund now come from the Shared
+  // Financial Engine (lib/engine/financial-engine.ts, Phase 2 foundation)
+  // instead of being computed inline here. This component was one of the
+  // duplicate net-worth/health-score implementations flagged in the
+  // architecture audit — and the one that actually renders what the user
+  // sees, unlike lib/supabase/queries/dashboard.ts which turned out to be
+  // dead code. This is the real fix.
+  const netWorthResult = useMemo(
+    () => FinancialEngine.calculateNetWorth({ accounts, investments, receivables, debts }),
+    [accounts, investments, receivables, debts]
   )
-
-  const totalInvested = useMemo(
-    () => investments.reduce((s, i) => s + (i.current_value ?? i.invested_amount), 0),
-    [investments]
-  )
-
-  const totalDebt = useMemo(
-    () => debts.reduce((s, d) => s + d.outstanding, 0),
-    [debts]
-  )
-
-  const netWorth  = liquidCash + totalInvested - totalDebt
+  const liquidCash    = netWorthResult.breakdown.liquidCash
+  const totalInvested = netWorthResult.breakdown.investments
+  const totalDebt     = netWorthResult.totalLiabilities
+  const netWorth       = netWorthResult.netWorth
 
   const totalEMI  = useMemo(
     () => debts.reduce((s, d) => s + (d.emi_amount ?? 0), 0),
@@ -317,20 +315,28 @@ export function PremiumDashboard({
   const monthlySavings = Math.max(0, monthlyNetIncome - thisExpenses)
   const expenseChange  = lastExpenses > 0
     ? ((thisExpenses - lastExpenses) / lastExpenses) * 100 : 0
-  const debtRatio = monthlyNetIncome > 0 ? (totalEMI / monthlyNetIncome) * 100 : 0
+  const debtRatioResult = useMemo(
+    () => FinancialEngine.calculateDebtRatio({ monthlyEMI: totalEMI, monthlyIncome: monthlyNetIncome }),
+    [totalEMI, monthlyNetIncome]
+  )
+  const debtRatio = debtRatioResult.ratio
 
-  /** Composite health score 0-100 */
-  const healthScore = useMemo(() => {
-    let s = 40
-    if (liquidCash >= monthlyNetIncome * 3)                                      s += 15
-    if (debtRatio < 30)                                                          s += 15
-    if (goals.length > 0)                                                        s += 10
-    if (totalInvested > 0)                                                       s += 10
-    if (tithe.length > 0)                                                        s +=  5
-    if (receivables.filter(r => r.status === 'overdue').length === 0)            s +=  5
-    return Math.min(100, s)
-  }, [liquidCash, monthlyNetIncome, debtRatio, goals.length,
-      totalInvested, tithe.length, receivables])
+  /**
+   * Financial Health Score — now the full weighted, multi-category engine
+   * (Feature 1 of the v2 Intelligent Finance layer:
+   * lib/engine/health-score-engine.ts) instead of the old 6-line ad hoc
+   * point tally. Categories with no underlying data (e.g. Budget Adherence
+   * — there's no budgets table yet) are gracefully excluded rather than
+   * faked; see the engine file for the full rationale.
+   */
+  const healthResult = useMemo(() => calculateFinancialHealthScore(buildHealthCategoryInput({
+    accounts, investments, debts, receivables, insurance, goals,
+    monthlyIncome: monthlyNetIncome,
+    thisMonthExpenses: thisExpenses,
+    lastMonthExpenses: lastExpenses,
+    annualIncome: annualNetIncome,
+  })), [accounts, investments, debts, receivables, insurance, goals, monthlyNetIncome, thisExpenses, lastExpenses, annualNetIncome])
+  const healthScore = healthResult.score
 
   /** Monthly income & expense bars for Cash Flow section */
   const cashFlowTrend = useMemo(() => FY_MONTHS.map((label, i) => {
@@ -620,28 +626,27 @@ export function PremiumDashboard({
             <SectionHeader title="Financial Health" href="/net-worth" hrefLabel="Details" />
             <HealthRing score={healthScore} />
             <div className="mt-4 space-y-2">
-              {[
-                { label: 'Emergency Fund',
-                  value: Math.min(100, (liquidCash / (monthlyNetIncome * 6 + 1)) * 100),
-                  color: T.blue },
-                { label: 'Debt Load',
-                  value: Math.max(0, 100 - debtRatio * 2),
-                  color: T.green },
-                { label: 'Goal Progress',
-                  value: goals.length > 0
-                    ? Math.round(goals.reduce((s, g) =>
-                        s + (g.current_amount / g.target_amount), 0) / goals.length * 100)
-                    : 0,
-                  color: T.purple },
-              ].map(item => (
-                <div key={item.label} className="space-y-1">
-                  <div className="flex justify-between text-[11px]">
-                    <span style={{ color: T.muted }}>{item.label}</span>
-                    <span style={{ color: T.text }}>{item.value.toFixed(0)}%</span>
+              {healthResult.categories
+                .filter(c => c.dataAvailable)
+                .sort((a, b) => b.weight - a.weight)
+                .slice(0, 4)
+                .map(cat => (
+                  <div key={cat.key} className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span style={{ color: T.muted }}>{cat.label}</span>
+                      <span style={{ color: T.text }}>{cat.score}%</span>
+                    </div>
+                    <ProgressBar
+                      value={cat.score ?? 0}
+                      color={cat.score! >= 75 ? T.green : cat.score! >= 50 ? T.blue : T.red}
+                    />
                   </div>
-                  <ProgressBar value={item.value} color={item.color} />
-                </div>
-              ))}
+                ))}
+              {healthResult.categories.some(c => !c.dataAvailable) && (
+                <p className="text-[10px] pt-1" style={{ color: T.muted }}>
+                  {healthResult.categories.filter(c => !c.dataAvailable).map(c => c.label).join(', ')} not yet tracked
+                </p>
+              )}
             </div>
           </div>
 
@@ -664,11 +669,8 @@ export function PremiumDashboard({
                     monthlyNetIncome > 0
                       ? ((monthlySavings / monthlyNetIncome) * 100).toFixed(0) : 0
                   }%. Strong position — consider increasing investments.`
-                : debtRatio > 40
-                ? `Debt-to-income is high at ${debtRatio.toFixed(0)}%. Prioritise paying off the highest-interest loan first.`
-                : liquidCash < monthlyNetIncome * 3
-                ? `Emergency fund covers ${monthlyNetIncome > 0
-                    ? (liquidCash / monthlyNetIncome).toFixed(1) : 0} months. Build to 3 months before investing more.`
+                : healthResult.recommendations[0]
+                ? healthResult.recommendations[0].text
                 : `You saved ${fmtINR(monthlySavings)} this month. Consider a SIP or FD to put it to work.`
               }
             </p>
